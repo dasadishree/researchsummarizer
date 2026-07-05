@@ -10,11 +10,13 @@ Overall idea (this is big project i might be shooting a little too high)
 5. database agent saves everything safely
 6. chat agent answers questions abt papers
 
+mvp goal: upload a research paper, automatically add it to an evovling json reserarch knowledge
 
 # Architcture:
 frontend - react & next.js
 styling - tailwind css
 backend api - fastapi (python)
 AI - hack club ai
+database - sqlite
 file storage-  local (maybe change later)
 knowledge graph - sqlite
