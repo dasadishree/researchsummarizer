@@ -1,13 +1,43 @@
+'use client';
+
+import { useRef } from "react";
+
 export default function Home() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>)=>{
+    const file = e.target.files?.[0];
+    if (!file) return;
+    console.log("Selected file:", file.name);
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch("http://127.0.0.1:8000/upload", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    console.log("Backend response:", data);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
         
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">ResearchOS</h1>
-          <button className="bg-black text-white px-4 py-2 rounded-lg">
+          <button onClick={handleUploadClick} className="bg-black text-white px-4 py-2 rounded-lg">
             Upload Paper
           </button>
+          <input
+            type="file"
+            accept="application/pdf"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+          />
         </div>
 
         <div className="grid grid-cols-3 gap-4">
