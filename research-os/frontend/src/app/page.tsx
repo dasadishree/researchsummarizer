@@ -1,9 +1,10 @@
 'use client';
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadResult, setUploadResult] = useState<any>(null);
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   }
@@ -14,12 +15,12 @@ export default function Home() {
     console.log("Selected file:", file.name);
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch("http://127.0.0.1:8000/upload", {
+    const res = await fetch("http://localhost:8000/upload", {
       method: "POST",
       body: formData,
     });
     const data = await res.json();
-    console.log("Backend response:", data);
+    setUploadResult(data);
   };
 
   return (
@@ -31,6 +32,25 @@ export default function Home() {
           <button onClick={handleUploadClick} className="bg-black text-white px-4 py-2 rounded-lg">
             Upload Paper
           </button>
+
+
+          <input
+            type="file"
+            accept="application/pdf"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+          />
+        </div>
+
+        {uploadResult && (
+          <div className="mt-4 p-4 bg-green-100 rounded-lg">
+            <p><b>Status:</b> {uploadResult.status}</p>
+            <p><b>Paper ID:</b> {uploadResult.paper_id}</p>
+            <p><b>Pages:</b> {uploadResult.metadata.page_count}</p>
+            <p><b>Words:</b> {uploadResult.metadata.word_count}</p>
+          </div>
+        )}
           <input
             type="file"
             accept="application/pdf"
@@ -54,7 +74,6 @@ export default function Home() {
             <div className="h-64 flex items-center justify-center text-gray-400">
               Graph will appear here
             </div>
-          </div>
       
       </div>      
 

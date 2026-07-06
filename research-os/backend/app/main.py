@@ -1,7 +1,9 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-
+from app.services.pdf_service import extract_text_from_pdf
+from app.services.ai_service import create_research_card
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -17,11 +19,16 @@ def root():
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     contents = await file.read()
-    print("Received file:", file.filename)
-    print("File size:", len(contents), "bytes")
-
+    pdf = extract_text_from_pdf(contents)
+    print("exttracted", pdf["word_count"], "words")
+    research_card = create_research_card(pdf["text"])
+    print(research_card)
     return{
-        "filename": file.filename,
-        "size": len(contents),
-        "status": "received"
+        "paper_id": "temp-id-123",
+        "status": "processed",
+        "metadata": {
+            "page_count": pdf["page_count"],
+            "word_count": pdf["word_count"]
+        },
+        "research_card": research_card
     }
