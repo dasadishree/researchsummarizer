@@ -44,21 +44,49 @@ export default function Home() {
         </div>
 
         {uploadResult && (
-          <div className="mt-4 p-4 bg-green-100 rounded-lg">
-            <p><b>Status:</b> {uploadResult.status}</p>
-            <p><b>Paper ID:</b> {uploadResult.paper_id}</p>
-            <p><b>Pages:</b> {uploadResult.metadata.page_count}</p>
-            <p><b>Words:</b> {uploadResult.metadata.word_count}</p>
+          <div className="mb-6 bg-white rounded-xl shadow p-6">
+            <h2 className="text-2xl font-bold mb-2">
+              {uploadResult.research_card.title}
+            </h2>
+            <p className="text-gray-600 mb-6">
+              {uploadResult.research_card.summary}
+            </p>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold">Objective</h3>
+                <p>{uploadResult.research_card.objective}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold">Methods</h3>
+                <p>{uploadResult.research_card.methods}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold">Dataset</h3>
+                <p>{uploadResult.research_card.dataset}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold">Research Gap</h3>
+                <p>{uploadResult.research_card.research_gap}</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">Keywords</h3>
+                <div className="flex flex-wrap gap-2">
+                  {uploadResult.research_card.keywords.map(
+                    (keyword: string, index: number) => (
+                      <span
+                        key={index}
+                        className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm"
+                      >
+                        {keyword}
+                      </span>
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
-          <input
-            type="file"
-            accept="application/pdf"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </div>
 
         <div className="grid grid-cols-3 gap-4">
           
@@ -74,6 +102,7 @@ export default function Home() {
             <div className="h-64 flex items-center justify-center text-gray-400">
               Graph will appear here
             </div>
+          </div>
       
       </div>      
 
@@ -83,8 +112,6 @@ export default function Home() {
           Ask questions about your papers
         </p>
       </div>
-
-
     </div>
   </div>
   );
