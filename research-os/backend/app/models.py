@@ -5,6 +5,7 @@ class ResearchCard(Base):
     __tablename__ = "research_cards"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String)
+    doi = Column(String, unique=True, index=True)
     summary=Column(Text)
     objective=Column(Text)
     hypothesis=Column(Text)

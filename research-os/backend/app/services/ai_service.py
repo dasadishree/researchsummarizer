@@ -20,6 +20,7 @@ Fields:
 - title
 - summary
 - objective
+- doi
 - hypothesis
 - methods
 - dataset

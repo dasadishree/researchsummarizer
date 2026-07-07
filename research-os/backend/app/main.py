@@ -31,8 +31,22 @@ async def upload_file(file: UploadFile = File(...)):
 
     db = SessionLocal()
 
+    if research_card["doi"]:
+        existing = db.query(ResearchCard).filter(
+            ResearchCard.doi == research_card["doi"]
+        ).first()
+
+    if existing:
+        db.close()
+        return {
+            "message": "Paper already uploaded.",
+            "paper_id": existing.id,
+            "research_card": research_card
+        }
+
     paper = ResearchCard(
         title=research_card["title"],
+        doi=research_card["doi"],
         summary=research_card["summary"],
         objective=research_card["objective"],
         hypothesis=research_card["hypothesis"],
