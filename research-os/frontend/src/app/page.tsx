@@ -1,10 +1,25 @@
 'use client';
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadResult, setUploadResult] = useState<any>(null);
+  const [papers, setPapers] = useState<any[]>([]);
+  const [selectedPaper, setSelectedPaper] = useState<any>(null);
+
+  useEffect(() => {
+    const loadPapers = async() => {
+      const res = await fetch("http://localhost:8000/papers");
+      const data = await res.json();
+      setPapers(data);
+      
+      if(data.length>0){
+        setSelectedPaper(data[0]);
+      }
+    };
+    loadPapers();
+  }, []);
+
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   }
@@ -12,7 +27,6 @@ export default function Home() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>)=>{
     const file = e.target.files?.[0];
     if (!file) return;
-    console.log("Selected file:", file.name);
     const formData = new FormData();
     formData.append("file", file);
     const res = await fetch("http://localhost:8000/upload", {
@@ -20,7 +34,7 @@ export default function Home() {
       body: formData,
     });
     const data = await res.json();
-    setUploadResult(data);
+    setSelectedPaper(data.research_card);
   };
 
   return (
@@ -43,45 +57,49 @@ export default function Home() {
           />
         </div>
 
-        {uploadResult && (
+        {selectedPaper && (
           <div className="mb-6 bg-white rounded-xl shadow p-6">
             <h2 className="text-2xl font-bold mb-2">
-              {uploadResult.research_card.title}
+              {selectedPaper.title}
             </h2>
             <p className="text-gray-600 mb-6">
-              {uploadResult.research_card.summary}
+              {selectedPaper.summary}
             </p>
             <div className="space-y-4">
               <div>
                 <h3 className="font-semibold">Objective</h3>
-                <p>{uploadResult.research_card.objective}</p>
+                <p>{selectedPaper.objective}</p>
               </div>
               <div>
                 <h3 className="font-semibold">Methods</h3>
-                <p>{uploadResult.research_card.methods}</p>
+                <p>{selectedPaper.methods}</p>
               </div>
               <div>
                 <h3 className="font-semibold">Dataset</h3>
-                <p>{uploadResult.research_card.dataset}</p>
+                <p>{selectedPaper.dataset}</p>
               </div>
               <div>
                 <h3 className="font-semibold">Research Gap</h3>
-                <p>{uploadResult.research_card.research_gap}</p>
+                <p>{selectedPaper.research_gap}</p>
               </div>
 
               <div>
                 <h3 className="font-semibold mb-2">Keywords</h3>
                 <div className="flex flex-wrap gap-2">
-                  {uploadResult.research_card.keywords.map(
-                    (keyword: string, index: number) => (
+                  {String(selectedPaper.keywords)
+                    .replace("[", "")
+                    .replace("]", "")
+                    .replaceAll("'", "")
+                    .split(",")
+                    .map((keyword: string, index: number) => (
                       <span
                         key={index}
                         className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm"
                       >
-                        {keyword}
+                        {keyword.trim()}
                       </span>
-                    )
-                  )}
+                    ))
+                  }
                 </div>
               </div>
             </div>
@@ -92,9 +110,22 @@ export default function Home() {
           
           <div className="col-span-1 bg-white p-4 rounded-xl shadow">
             <h2 className="font-semibold mb-2">Your Papers</h2>
-            <p className="text-gray-500 text-sm">
-              No papers uploaded yet
-            </p>
+            {papers.length === 0 ? (
+              <p className="text-gray-500">No papers uploaded yet.</p>
+            ) : (
+              <div className="space-y-3">
+                  {papers.map((paper) => (
+                    <div
+                      key={paper.id}
+                      onClick={()=>setSelectedPaper(paper)}
+                      className="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer"
+                    >
+                        <h3 className="font-medium text-sm">{paper.title}</h3>
+                        <p className="text-xs text0gray-500 mt-1">{paper.doi}</p>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
 
           <div className="col-span-2 bg-white p-4 rounded-xl shadow">
