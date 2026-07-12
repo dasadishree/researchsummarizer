@@ -21,13 +21,6 @@ app.add_middleware(
 def root():
     return{"message": "ResearchOS API is running!"}
 
-@app.get("/papers")
-def get_papers():
-    db=SessionLocal()
-    papers=db.query(ResearchCard).all()
-    db.close()
-    return papers
-
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     contents = await file.read()
@@ -81,14 +74,22 @@ async def upload_file(file: UploadFile = File(...)):
 
 @app.get("/papers")
 def get_papers():
-    deb=SessionLocal()
+    db=SessionLocal()
     papers=db.query(ResearchCard).all()
     result=[]
     for paper in papers:
         result.append({
             "id": paper.id,
             "title": paper.title,
-            "summary": paper.summary
+            "doi": paper.doi,
+            "summary": paper.summary,
+            "objective": paper.objective,
+            "hypothesis": paper.hypothesis,
+            "methods": paper.methods,
+            "dataset": paper.dataset,
+            "research_gap": paper.research_gap,
+            "conclusion": paper.conclusion,
+            "keywords": paper.keywords,
         })
     db.close()
     return result

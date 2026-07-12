@@ -6,6 +6,8 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [papers, setPapers] = useState<any[]>([]);
   const [selectedPaper, setSelectedPaper] = useState<any>(null);
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
 
   useEffect(() => {
     const loadPapers = async() => {
@@ -14,7 +16,7 @@ export default function Home() {
       setPapers(data);
       
       if(data.length>0){
-        setSelectedPaper(data[0]);
+        setSelectedPaper(data[data.length-1]);
       }
     };
     loadPapers();
@@ -29,12 +31,16 @@ export default function Home() {
     if (!file) return;
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch("http://localhost:8000/upload", {
+    await fetch("http://localhost:8000/upload", {
       method: "POST",
       body: formData,
     });
-    const data = await res.json();
-    setSelectedPaper(data.research_card);
+    const papersRes = await fetch("http://localhost:8000/papers");
+    const papersData = await papersRes.json();
+    setPapers(papersData);
+    if(papersData.length>0){
+      setSelectedPaper(papersData[papersData.length-1]);
+    };
   };
 
   return (
@@ -121,7 +127,7 @@ export default function Home() {
                       className="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer"
                     >
                         <h3 className="font-medium text-sm">{paper.title}</h3>
-                        <p className="text-xs text0gray-500 mt-1">{paper.doi}</p>
+                        <p className="text-xs text-gray-500 mt-1">{paper.doi}</p>
                     </div>
                   ))}
               </div>
@@ -138,10 +144,25 @@ export default function Home() {
       </div>      
 
       <div className="mt-4 bg-white p-4 rounded-xl shadow">
-        <h2 className="font-semibold mb-2">AI Research Assistant</h2>
-        <p className="text-gray-500 text-sm">
-          Ask questions about your papers
-        </p>
+        <h2 className="font-semibold mb-2">AI Research Assistant</h2>        
+        <div className="space-y-3">
+          <textarea
+            value={question}
+            onChange={(e)=>setQuestion(e.target.value)}
+            placeholder="Ask anything about your research..."
+            className="w-full border rounded-lg p-3"
+          />
+          <button
+            className="bg-black text-white px-4 py-2 rounded-lg"
+          >
+            Ask AI
+          </button>
+          {answer && (
+            <div className="bg-gray-100 rounded-lg p-4">
+              {answer}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   </div>
