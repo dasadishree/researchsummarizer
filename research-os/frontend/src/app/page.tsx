@@ -1,25 +1,43 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from "react";
-
+const ForceGraph2D = dynamic(()=>import('react-force-graph-2d'), {ssr:false});
 export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [papers, setPapers] = useState<any[]>([]);
   const [selectedPaper, setSelectedPaper] = useState<any>(null);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
-
-  useEffect(() => {
-    const loadPapers = async() => {
+  const [graphData, setGraphData] = useState<{nodes: any[]; links: any[]}>({nodes: [], links: []});
+  const [loadingUpload, setLoadingUpload] = useState(false);
+  const [loadingChat, setLoadingChat] = useState(false);
+  const loadPapers = async() => {
+    try{
       const res = await fetch("http://localhost:8000/papers");
       const data = await res.json();
       setPapers(data);
-      
-      if(data.length>0){
+      if(data.length>0 && !selectedPaper){
         setSelectedPaper(data[data.length-1]);
       }
-    };
+    } catch(err){
+      console.error("failed to load papers:", err);
+    }
+  };
+
+  const fetchGraphData = async() =>{
+    try{
+      const res = await fetch("http://localhost:8000/graph");
+      const data = await res.json();
+      setGraphData(data);
+    } catch (err){
+      console.error("Failed to load graph data:", err);
+    }
+  };
+
+  useEffect(()=>{
     loadPapers();
+    fetchGraphData();
   }, []);
 
   const handleUploadClick = () => {
@@ -29,34 +47,48 @@ export default function Home() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>)=>{
     const file = e.target.files?.[0];
     if (!file) return;
+    setLoadingUpload(true);
     const formData = new FormData();
     formData.append("file", file);
-    await fetch("http://localhost:8000/upload", {
-      method: "POST",
-      body: formData,
-    });
+    try{
+      await fetch("http://localhost:8000/upload", {
+        method: "POST",
+        body: formData,
+      });
+      await loadPapers();
+      await fetchGraphData();
+    } catch(err){
+      console.error("Upload error:", err);
+    } finally {
+      setLoadingUpload(false);
+    }
+  };
     const papersRes = await fetch("http://localhost:8000/papers");
     const papersData = await papersRes.json();
     setPapers(papersData);
     if(papersData.length>0){
       setSelectedPaper(papersData[papersData.length-1]);
     };
-  };
 
   const askAI = async() => {
-    const res=await fetch("http://localhost:8000/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        question,
-      }),
-    });
+    if(!question.trim()) return;
+    setLoadingChat(true);
+    setAnswer("");
+    try{
+      const res = await fetch("http://localhost:8000/chat", {
+        method: "POST",
+        headers: {"Content-Type":  "application/json"},
+        body:JSON.stringify({question}),
+      });
+      const data = await res.json();
+      setAnswer(data.answer);
+    } catch(err){
+      setAnswer("failed to reach AI assistant");
+    } finally{
+      setLoadingChat(false);
+    }
+  };
 
-    const data = await res.json();
-    setAnswer(data.answer);
-  }
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">

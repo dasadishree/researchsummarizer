@@ -5,6 +5,43 @@ from app.services.pdf_service import extract_text_from_pdf
 from app.services.ai_service import create_research_card, client
 from app.database.database import engine, Base, SessionLocal
 from app.models import ResearchCard
+import json
+from collections import defaultdict
+
+@app.get("/graph")
+def get_graph_data():
+    db=SessionLocal()
+    papers=db.query(ResearchCard).all()
+    db.close()
+    nodes=[]
+    edges=[]
+    def parse_keywords(kw_str):
+        if not kw_str:
+            return []
+        cleaned = kw_str.replace("[", "").replace("]", "").replace("'", "").replace("'", "")
+        return [k.strip().lower() for k in cleaned.split(",") if k.strip()]
+    for paper in papers:
+        nodes.append({
+            "id": str(paper.id),
+            "label": paper.title,
+            "doi": paper.doi
+        })
+    paper_keywords = {paper.id: parse_keywords(paper.keywords) for paper in papers}
+    for i in range(len(papers)):
+        for j in range(i+1, len(papers)):
+            p1_id=papers[i].id
+            p2_id=papers[j].id
+            k1=set(paper_keywords[p1_id])
+            k2=set(paper_keywords[p2_id])
+            shared=k1.intersection(k2)
+            if shared:
+                edges.append({
+                    "source": str(p1_id),
+                    "target": str(p2_id),
+                    "weight": len(shared),
+                    "shared_keywords": list(shared)
+                })
+    return {"nodes": nodes, "links": edges}
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
