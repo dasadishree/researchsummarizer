@@ -1,14 +1,13 @@
 from fastapi import FastAPI, UploadFile, File
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from app.services.pdf_service import extract_text_from_pdf
-from app.services.ai_service import create_research_card
+from app.services.ai_service import create_research_card, client
 from app.database.database import engine, Base, SessionLocal
 from app.models import ResearchCard
-import app.models
-from app.schemas import ChatRequest
 
-app = FastAPI()
 Base.metadata.create_all(bind=engine)
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,6 +17,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class ChatRequest(BaseModel):
+    question: str
+
 @app.get("/")
 def root():
     return{"message": "ResearchOS API is running!"}
@@ -26,11 +28,12 @@ def root():
 async def upload_file(file: UploadFile = File(...)):
     contents = await file.read()
     pdf = extract_text_from_pdf(contents)
-    print("exttracted", pdf["word_count"], "words")
+    print("extracted", pdf["word_count"], "words")
     research_card = create_research_card(pdf["text"])
     print(research_card)
 
     db = SessionLocal()
+    existing=None
 
     if research_card["doi"]:
         existing = db.query(ResearchCard).filter(
@@ -100,9 +103,28 @@ def chat(request: ChatRequest):
     db=SessionLocal()
     papers=db.query(ResearchCard).all()
     db.close()
-    context=""
+    if not papers:
+        return {"answer": "No research papers uploaded yet! Upload a paper to start asking questions"}
+    
+    context_blocks=[]
     for paper in papers:
-        contexr += f"Title: {paper.title}\nSummary: {paper.summary}\n\n"
+        context_blocks.append(
+            f"Title: {paper.title}\nSummary: {paper.summary}\nObjective: {paper.objective}\n"
+        )
+    context = "\n---\n".join(context_blocks)
+    system_prompt=(
+        "You are ResearchOS, a sweet, clear, and helpful AI research assistant."
+        "Answer the user's question accurately based on the research papers provided in the library context"
+        "Keep your response structured, concise, and easy to read."
+    )
+    response = client.chat.completions.create(
+        model="qwen/qwen3-32b",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Library Context:\n{context}\n\nQuestion: {request.question}"}
+        ],
+    )
+
     return{
-        "answer": f"You asked: {request.question}"
+        "answer": response.choices[0].message.content
     }
