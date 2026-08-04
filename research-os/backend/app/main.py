@@ -5,6 +5,7 @@ from app.services.ai_service import create_research_card
 from app.database.database import engine, Base, SessionLocal
 from app.models import ResearchCard
 import app.models
+from app.schemas import ChatRequest
 
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
@@ -93,3 +94,15 @@ def get_papers():
         })
     db.close()
     return result
+
+@app.post("/chat")
+def chat(request: ChatRequest):
+    db=SessionLocal()
+    papers=db.query(ResearchCard).all()
+    db.close()
+    context=""
+    for paper in papers:
+        contexr += f"Title: {paper.title}\nSummary: {paper.summary}\n\n"
+    return{
+        "answer": f"You asked: {request.question}"
+    }

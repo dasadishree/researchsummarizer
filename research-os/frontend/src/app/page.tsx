@@ -43,6 +43,20 @@ export default function Home() {
     };
   };
 
+  const askAI = async() => {
+    const res=await fetch("http://localhost:8000/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        question,
+      }),
+    });
+
+    const data = await res.json();
+    setAnswer(data.answer);
+  }
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
@@ -153,6 +167,7 @@ export default function Home() {
             className="w-full border rounded-lg p-3"
           />
           <button
+            onClick={askAI}
             className="bg-black text-white px-4 py-2 rounded-lg"
           >
             Ask AI
